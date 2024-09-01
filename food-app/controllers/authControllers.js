@@ -1,75 +1,96 @@
 const userModel = require("../models/userModel");
+const bcrypt = require("bcryptjs");
+const JWT = require("jsonwebtoken");
 
-//REGISTER
+// REGISTER
 const registerController = async (req, res) => {
   try {
-    const { username, email, password, phone, address } = req.body;
+    const { userName, email, password, phone, address, answer } = req.body;
     //validation
-    if (!username || !email || !password || !phone || !address) {
+    if (!userName || !email || !password || !address || !phone || !answer) {
       return res.status(500).send({
         success: false,
-        message: "Please fill all the fields",
+        message: "Please Provide All Fields",
       });
     }
-    //check user exists
-    const existing = await userModel.findOne({ email });
-    if (existing) {
+    // chekc user
+    const exisiting = await userModel.findOne({ email });
+    if (exisiting) {
       return res.status(500).send({
         success: false,
-        message: "Email already exists",
+        message: "Email Already Registerd please Login",
       });
     }
-    //new user
+    //hashing password
+    var salt = bcrypt.genSaltSync(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    //create new user
     const user = await userModel.create({
-      username,
+      userName,
       email,
-      password,
-      phone,
+      password: hashedPassword,
       address,
+      phone,
+      answer,
     });
-    res.send(201).send({
+    res.status(201).send({
       success: true,
-      message: "User Registered Successfully",
+      message: "Successfully Registered",
+      user,
     });
   } catch (error) {
-    console.log("Error in Register API", error);
+    console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error in internal API",
+      message: "Error In Register API",
       error,
     });
   }
 };
 
-//login controller
+// LOGIN
 const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    //validation
+    //validfatuion
     if (!email || !password) {
       return res.status(500).send({
         success: false,
-        message: "Please fill all the fields /all details",
+        message: "Please PRovide EMail OR Password",
       });
     }
-    //check user exists
-    const user = await userModel.findOne({ email: email, password: password });
+    //check user
+    const user = await userModel.findOne({ email });
     if (!user) {
       return res.status(404).send({
         success: false,
-        message: "User not found or password missmatch",
+        message: "User Not Found",
       });
     }
+    //check user password  | compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(500).send({
+        success: false,
+        message: "Invalid Credentials",
+      });
+    }
+    // token
+    const token = JWT.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    user.password = undefined;
     res.status(200).send({
       success: true,
-      message: "User Logged in Successfully",
+      message: "Login Successfully",
+      token,
       user,
     });
   } catch (error) {
-    console.log("Error in Login API", error);
+    console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error in internal LOGIN API",
+      message: "Error In Login API",
       error,
     });
   }
