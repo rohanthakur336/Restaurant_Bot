@@ -36,13 +36,13 @@ This project is a backend service for a restaurant web application developed usi
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/your-username/restaurant-web-app-backend.git
+    git clone https://github.com/rohanthakur336/Restaurant_Bot.git
     ```
 
 2. Navigate to the project directory:
 
     ```bash
-    cd restaurant-web-app-backend
+    cd food-app
     ```
 
 3. Install the required dependencies:
